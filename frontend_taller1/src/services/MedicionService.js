@@ -12,7 +12,7 @@ const shouldSeed = () => {
 };
 
 if (shouldSeed()) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([ 
     { id: 201, fecha: '2025-12-01', hora: '09:20', medidor: 'X10', direccion: 'Calle Aurora 12, Quilpué', valor: 245.7, tipo: 'Kilowatts', observacion: 'Lectura inicial' },
     { id: 202, fecha: '2025-12-02', hora: '13:05', medidor: 'Y22', direccion: 'Av. El Sol 45, Viña del Mar', valor: 102.4, tipo: 'Watts', observacion: 'Prueba sensor' },
     { id: 203, fecha: '2025-12-03', hora: '18:40', medidor: 'Z03', direccion: 'Pasaje Lirio 9, Valparaíso', valor: 19.8, tipo: 'Temperatura', observacion: 'Exterior' },
