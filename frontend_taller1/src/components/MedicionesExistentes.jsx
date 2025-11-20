@@ -24,47 +24,43 @@ function formatearValor(fila) {
     return `${fila.valor} ${obtenerUnidad(fila.tipo)}`;
 }
 
-function plantillaAcciones(fila, descartarMedicion) {
-    return (
-        <Button
-            icon="pi pi-trash"
-            severity="danger"
-            text
-            onClick={() => descartarMedicion(fila.id)}
-            tooltip="Descartar Lectura"
-        />
-    );
-}
-
 export default function MedicionesExistentes() {
-    const [listaMediciones, setListaMediciones] = useState([]);
+    const [listaMediciones, setListaMediciones] = useState(obtenerMediciones());
     const [tipoFiltro, setTipoFiltro] = useState(null);
     const toast = useRef(null);
 
     useEffect(() => {
-        setListaMediciones(obtenerMediciones());
-        const actualizarMediciones = () => setListaMediciones(getMediciones());
+        const actualizarMediciones = () => setListaMediciones(obtenerMediciones());
         window.addEventListener('storage', actualizarMediciones);
         return () => window.removeEventListener('storage', actualizarMediciones);
     }, []);
 
-    function descartarMedicion(id) {
-        eliminarMedicion(id);
-        setListaMediciones(obtenerMediciones());
-        toast.current.show({
-            severity: 'info',
-            summary: 'Lectura descartada',
-            life: 3000
-        });
-    }
-
-    function filtrarMediciones() {
-        if (tipoFiltro) {
-            const filtradas = obtenerMediciones().filter(medicion => medicion.tipo === tipoFiltro);
-            setListaMediciones(filtradas);
-        } else {
+    const filtrarMediciones = () => {
+        if (tipoFiltro === null) {
             setListaMediciones(obtenerMediciones());
+        } else {
+            const filtradas = obtenerMediciones().filter(
+                (medicion) => medicion.tipo === tipoFiltro
+            );
+            setListaMediciones(filtradas);
         }
+    };
+
+    const limpiarFiltro = () => {
+        setTipoFiltro(null);
+        setListaMediciones(obtenerMediciones());
+    };
+
+    function plantillaAcciones(fila, descartarMedicion) {
+        return (
+            <Button
+                icon="pi pi-trash"
+                severity="danger"
+                text
+                onClick={() => descartarMedicion(fila.id)}
+                tooltip="Descartar Lectura"
+            />
+        );
     }
 
     return (
@@ -79,6 +75,7 @@ export default function MedicionesExistentes() {
                         placeholder="Filtrar por tipo"
                     />
                     <Button label="Filtrar" icon="pi pi-filter" onClick={filtrarMediciones} />
+                    <Button label="Limpiar" icon="pi pi-times" className="p-button-secondary" onClick={limpiarFiltro} />
                 </div>
 
                 <DataTable
@@ -93,7 +90,7 @@ export default function MedicionesExistentes() {
                     <Column field="hora" header="Hora" />
                     <Column field="medidor" header="Medidor" />
                     <Column header="Valor" body={formatearValor} />
-                    <Column header="Acciones" body={(fila) => plantillaAcciones(fila, descartarMedicion)} />
+                    <Column header="Acciones" body={(fila) => plantillaAcciones(fila)} />
                 </DataTable>
             </Panel>
         </div>
