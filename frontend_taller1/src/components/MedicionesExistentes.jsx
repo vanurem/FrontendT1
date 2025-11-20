@@ -5,84 +5,90 @@ import { Button } from 'primereact/button';
 import { Toast } from 'primereact/toast';
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
-import { getMediciones, deleteMedicion, filtrarPorTipo } from '../services/MedicionService';
+import { getMediciones, deleteMedicion } from '../services/MedicionService';
 
-const MedicionesExistentes = () => {
-  const [mediciones, setMediciones] = useState([]);
-  const [tipoFiltro, setTipoFiltro] = useState(null);
-  const toast = useRef(null);
+const opcionesTipoMedida = [
+    { label: 'Kilowatts', value: 'Kilowatts' },
+    { label: 'Watts', value: 'Watts' },
+    { label: 'Temperatura', value: 'Temperatura' }
+];
 
-  useEffect(() => {
-    setMediciones(getMediciones()); // <-- carga inicial
-    const handleStorage = () => setMediciones(getMediciones());
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
-
-  const handleDelete = (id) => {
-    deleteMedicion(id);
-    setMediciones(getMediciones());
-    toast.current.show({ severity: 'info', summary: 'Lectura descartada', life: 3000 });
-  };
-
-  const handleFiltrar = () => {
-    if (tipoFiltro) {
-      const filtradas = getMediciones().filter(m => m.tipo === tipoFiltro);
-      setMediciones(filtradas);
-    } else {
-      setMediciones(getMediciones());
-    }
-  };
-
-  const unidad = (tipo) => {
+function obtenerUnidad(tipo) {
     if (tipo === 'Kilowatts') return 'kW';
     if (tipo === 'Watts') return 'W';
     if (tipo === 'Temperatura') return 'C';
     return '';
-  };
+}
 
-  const valorTemplate = (row) => `${row.valor} ${unidad(row.tipo)}`;
+function formatearValor(fila) {
+    return `${fila.valor} ${obtenerUnidad(fila.tipo)}`;
+}
 
-  const accionesTemplate = (row) => (
-    <Button
-      icon="pi pi-trash"
-      severity="danger"
-      text
-      onClick={() => handleDelete(row.id)}
-      tooltip="Descartar Lectura"
-    />
-  );
+function plantillaAcciones(fila, descartarMedicion) {
+    return (
+        <Button
+            icon="pi pi-trash"
+            severity="danger"
+            text
+            onClick={() => descartarMedicion(fila.id)}
+            tooltip="Descartar Lectura"
+        />
+    );
+}
 
-  const tipos = [
-    { label: 'Kilowatts', value: 'Kilowatts' },
-    { label: 'Watts', value: 'Watts' },
-    { label: 'Temperatura', value: 'Temperatura' }
-  ];
+export default function MedicionesExistentes() {
+    const [listaMediciones, setListaMediciones] = useState([]);
+    const [tipoFiltro, setTipoFiltro] = useState(null);
+    const toast = useRef(null);
 
-  return (
-    <div className="container mt-4">
-      <Toast ref={toast} />
-      <Panel header="Mediciones Existentes">
-        <div className="d-flex align-items-center gap-2 mb-3">
-          <Dropdown
-            value={tipoFiltro}
-            options={tipos}
-            onChange={(e) => setTipoFiltro(e.value)}
-            placeholder="Filtrar por tipo"
-          />
-          <Button label="Filtrar" icon="pi pi-filter" onClick={handleFiltrar} />
+    useEffect(() => {
+        setListaMediciones(getMediciones());
+        const actualizarMediciones = () => setListaMediciones(getMediciones());
+        window.addEventListener('storage', actualizarMediciones);
+        return () => window.removeEventListener('storage', actualizarMediciones);
+    }, []);
+
+    function descartarMedicion(id) {
+        deleteMedicion(id);
+        setListaMediciones(getMediciones());
+        toast.current.show({
+            severity: 'info',
+            summary: 'Lectura descartada',
+            life: 3000
+        });
+    }
+
+    function filtrarMediciones() {
+        if (tipoFiltro) {
+            const filtradas = getMediciones().filter(medicion => medicion.tipo === tipoFiltro);
+            setListaMediciones(filtradas);
+        } else {
+            setListaMediciones(getMediciones());
+        }
+    }
+
+    return (
+        <div className="container mt-4">
+            <Toast ref={toast} />
+            <Panel header="Mediciones Existentes">
+                <div className="d-flex align-items-center gap-2 mb-3">
+                    <Dropdown
+                        value={tipoFiltro}
+                        options={opcionesTipoMedida}
+                        onChange={(e) => setTipoFiltro(e.value)}
+                        placeholder="Filtrar por tipo"
+                    />
+                    <Button label="Filtrar" icon="pi pi-filter" onClick={filtrarMediciones} />
+                </div>
+
+                <DataTable value={listaMediciones} paginator rows={5} sortField="fecha" sortOrder={-1}>
+                    <Column field="fecha" header="Fecha" sortable />
+                    <Column field="hora" header="Hora" />
+                    <Column field="medidor" header="Medidor" />
+                    <Column header="Valor" body={formatearValor} />
+                    <Column header="Acciones" body={(fila) => plantillaAcciones(fila, descartarMedicion)} />
+                </DataTable>
+            </Panel>
         </div>
-
-        <DataTable value={mediciones} paginator rows={5} sortField="fecha" sortOrder={-1}>
-          <Column field="fecha" header="Fecha" sortable />
-          <Column field="hora" header="Hora" />
-          <Column field="medidor" header="Medidor" />
-          <Column header="Valor" body={valorTemplate} />
-          <Column header="Acciones" body={accionesTemplate} />
-        </DataTable>
-      </Panel>
-    </div>
-  );
-};
-
-export default MedicionesExistentes;
+    );
+}
